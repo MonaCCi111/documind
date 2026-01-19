@@ -44,3 +44,5 @@ weaviate_data/
 *.jpeg
 *.png
 *.docx
+.idea/
+.git/
