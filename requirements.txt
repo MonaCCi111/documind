@@ -33,3 +33,5 @@ python-multipart
 python-dotenv
 tqdm
 loguru
+
+spacy # а также python -m spacy download ru_core_news_lg
