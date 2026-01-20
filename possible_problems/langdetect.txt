@@ -1,0 +1,4 @@
+При стандартной установке через pip install langdetect
+Python почему то не видел модуль
+
+Помогла переустановка через conda install -c conda-forge langdetect

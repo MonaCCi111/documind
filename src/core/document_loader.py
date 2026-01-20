@@ -9,6 +9,7 @@ from unstructured.partition.auto import partition
 from unstructured.cleaners.core import clean_extra_whitespace
 import pymupdf
 import easyocr
+import torch
 from PIL import Image
 
 
@@ -89,40 +90,39 @@ class Document:
         for element in elements:
             if hasattr(element, 'text') and element.text.strip():
                 metadata = {
-                    'page_number': element.metadata.page_number \
-                        if hasattr(element.metadata, 'page_number') else 1,
+                    'page_number': int(element.metadata.page_number) \
+                        if (hasattr(element.metadata, 'page_number') and element.metadata.page_number) \
+                        else 1,
                     'element_type': element.category \
-                        if hasattr(element, 'category') else 'U',
+                        if hasattr(element, 'category') else 'Unknown',
                     'coordinates': element.metadata.coordinates \
                         if hasattr(element.metadata, 'coordinates') else None,
                     'source': 'unstructured'
                 }
 
-                chunk = Document(element.text, metadata)
+                chunk = DocumentChunk(element.text, metadata)
                 self.chunks.append(chunk)
 
     def _load_with_ocr(self):
         logger.info('Используем OCR для изображения...')
 
         if self._reader is None:
-            self._reader = easyocr.Reader(['ru, en'], gpu=False)
+            self._reader = easyocr.Reader(['ru', 'en'], gpu=torch.cuda.is_available())
 
         image = Image.open(self.file_path)
 
         results = self._reader.readtext(str(self.file_path), paragraph=True)
 
-        for i, (bbox, text, confidence) in enumerate(results):
-            if confidence > 0.3 and text.strip():
-                metadata = {
-                    'page_number': 1,
-                    'element_type': 'OCR_Text',
-                    'confidence': float(confidence),
-                    'bbox': bbox,
-                    'source': 'easyocr'
-                }
+        for i, (bbox, text) in enumerate(results):
+            metadata = {
+                'page_number': 1,
+                'element_type': 'OCR_Text',
+                'bbox': bbox,
+                'source': 'easyocr'
+            }
 
-                chunk = DocumentChunk(text, metadata)
-                self.chunks.append(chunk)
+            chunk = DocumentChunk(text, metadata)
+            self.chunks.append(chunk)
 
         if not self.chunks:
             logger.warning(f'Не удалось распознать текст на изображении {self.filename}')
@@ -130,7 +130,7 @@ class Document:
     def get_full_text(self) -> str:
         return '\n\n'.join([chunk.text for chunk in self.chunks])
 
-    def get_chunks_by_page(self, page_num:int) ->List[DocumentChunk]:
+    def get_chunks_by_page(self, page_num: int) -> List[DocumentChunk]:
         return [chunk for chunk in self.chunks if chunk.page_number == page_num]
 
     def get_statistic(self) -> Dict[str, Any]:
@@ -161,7 +161,7 @@ class DocumentLoader:
         if extensions == None:
             extensions = ['.pdf', '.docx', '.jpg', '.jpeg', '.png', '.txt']
 
-        documents=  []
+        documents = []
         directory = Path(directory_path)
 
         for ext in extensions:
