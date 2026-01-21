@@ -1,3 +1,5 @@
+from typing import List
+
 import weaviate
 from loguru import logger
 
@@ -11,7 +13,8 @@ class VectorStoreManager:
         schema = {
             'class': 'DocumentChunk',
             'description': 'Чанки документов с метаданными и сущностями',
-            'vectorizer': [
+            'vectorizer': 'none',
+            'properties': [
                 {'name': 'content', 'dataType': ['text'], 'description': 'Текст чанка'},
                 {'name': 'filename', 'dataType': ['string']},
                 {'name': 'page_number', 'dataType': ['int']},
@@ -34,3 +37,23 @@ class VectorStoreManager:
                     vector=vectors[i]
                 )
         logger.success(f'Загружено {len(chunks_data)} объектов в Weaviate')
+
+    def search(self, vector: list, limit: int = 5) -> List:
+        try:
+            response = self.client.query \
+                .get('DocumentChunk', ['content', 'filename', 'page_number', 'entities_json']) \
+                .with_near_vector({'vector': vector}) \
+                .with_limit(limit) \
+                .do()
+
+            if 'errors' in response:
+                logger.error(f'Ошибка Weaviate: {response["errors"]}')
+                return []
+
+            results = response.get('data', {}).get('Get', {}).get('DocumentChunk', [])
+            return results
+
+        except Exception as e:
+            logger.error(f'Ошибка поиска в Weaviate: {e}')
+            return []
+
