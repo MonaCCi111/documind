@@ -4,6 +4,7 @@ notebook
 langchain
 langchain-gigachat
 langchain-community
+langchain-weaviate
 
 # Обработка документов
 unstructured[pdf,docx]  # Главная библиотека для парсинга
@@ -11,14 +12,13 @@ pymupdf               # Альтернатива для PDF
 pdf2image             # Для конвертации PDF в изображения
 pillow                 # Работа с изображениями
 easyocr                  # OCR для сканов
-python-magic           # Определение типа файла
 python-magic-bin
 langdetect
 
 # Работа с данными
 pydantic
 pandas
-numpy==1.24.3
+numpy==1.26.2
 
 # Векторная БД
 weaviate-client
@@ -34,4 +34,5 @@ python-dotenv
 tqdm
 loguru
 
-spacy # а также python -m spacy download ru_core_news_lg
+spacy
+# а также python -m spacy download ru_core_news_lg
