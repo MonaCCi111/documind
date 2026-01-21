@@ -35,13 +35,13 @@ class DataEngineerAgent:
                 'entities_json': entities_json
             })
 
-            logger.info(f'Генерация эмбеддингов для {len(texts_to_embed)} чанков...')
-            vectors = self.embedder.encode(texts_to_embed, show_progress_bar=True)
+        logger.info(f'Генерация эмбеддингов для {len(texts_to_embed)} чанков...')
+        vectors = self.embedder.encode(texts_to_embed, show_progress_bar=True)
 
-            self.vector_store.upsert_chunks(chunks_for_db, vectors.tolist())
+        self.vector_store.upsert_chunks(chunks_for_db, vectors.tolist())
 
-            return {
-                'status': 'success',
-                'document': doc.filename,
-                'chunk_processed': len(chunks_for_db)
-            }
+        return {
+            'status': 'success',
+            'document': doc.filename,
+            'chunk_processed': len(chunks_for_db)
+        }

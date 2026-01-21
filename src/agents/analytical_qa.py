@@ -9,7 +9,7 @@ from src.core.vector_store import VectorStoreManager
 from src.config import settings
 
 class AnalyticalQAAgent:
-    def __int__(self):
+    def __init__(self):
         self.llm = GigaChat(
             credentials=settings.GIGACHAT_CREDENTIALS,
             verify_ssl_certs=False,
@@ -42,7 +42,7 @@ class AnalyticalQAAgent:
         if not relevant_chunks:
             return {
                 'answer': 'К сожалению, в базе данных не найдено информации по вашему запросу',
-                'soursec': []
+                'sources': []
             }
 
         context_str = self._format_context(relevant_chunks)
