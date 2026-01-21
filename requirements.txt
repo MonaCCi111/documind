@@ -36,3 +36,5 @@ loguru
 
 spacy
 # а также python -m spacy download ru_core_news_lg
+
+huggingface_hub[hf_xet]

@@ -28,8 +28,8 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
 
 input_texts = [
-    "query: Как работает машинное обучение?",
-    "passage: Машинное обучение — это область искусственного интеллекта.",
+    "query: Кто такая кошка?",
+    "passage: Это домашнее животное, одно из наиболее популярных (наряду с собакой) «животных-компаньонов»",
     "query: What is artificial intelligence?",
     "passage: Artificial intelligence is the simulation of human intelligence."
 ]
@@ -50,8 +50,8 @@ for text in input_texts:
     print(f"Размер эмбеддинга: {embedding.shape}")
     print(f"Первые 5 значений: {embedding[0, :5].tolist()}\n")
 
-    query_embedding = embeddings[0]  # "query: Как работает машинное обучение?"
-    passage_embedding = embeddings[1]  # "passage: Машинное обучение — это..."
+query_embedding = embeddings[0]  # "query: Как работает машинное обучение?"
+passage_embedding = embeddings[1]  # "passage: Машинное обучение — это..."
 
-    similarity = torch.mm(query_embedding, passage_embedding.transpose(0, 1))
-    print(f"Схожесть запроса и документа: {similarity.item():.4f}")
+similarity = torch.mm(query_embedding, passage_embedding.transpose(0, 1))
+print(f"Схожесть запроса и документа: {similarity.item():.4f}")
