@@ -18,3 +18,5 @@ class Config:
     CHUNK_OVERLAP = 200
 
 settings = Config()
+
+PROJECT_ROOT = Path(__file__).parent.parent
