@@ -1,7 +1,7 @@
 from typing import List
 
 import weaviate
-from weaviate.classes.config import Configure, Property, DataType
+from weaviate.classes.config import Configure, Property, DataType, ReferenceProperty
 from weaviate.classes.query import MetadataQuery
 from loguru import logger
 
@@ -13,22 +13,37 @@ class VectorStoreManager:
         self._setup_schema()
 
     def _setup_schema(self):
-        collection_name = 'DocumentChunk'
 
-        if not self.client.collections.exists(collection_name):
+        if not self.client.collections.exists('DocumentObject'):
             self.client.collections.create(
-                name=collection_name,
-                description='Чанки документов с метаданными и сущностями',
+                name='DocumentObject' ,
+                description='Целые документы с саммари',
+                vectorizer_config=Configure.Vectorizer.none(),
+                properties=[
+                    Property(name='filename', data_type=DataType.TEXT),
+                    Property(name='doc_type', data_type=DataType.TEXT),
+                    Property(name='summary', data_type=DataType.TEXT),
+                    Property(name='full_text_hash', data_type=DataType.TEXT),
+                    Property(name='added_at', data_type=DataType.DATE),
+                ]
+            )
+            logger.info('Коллекция DocumentObject создана')
+
+        if not self.client.collections.exists('DocumentChunk'):
+            self.client.collections.create(
+                name='DocumentChunk',
+                description='Фрагменты документов для точечного поиска',
                 vectorizer_config=Configure.Vectorizer.none(),
                 properties=[
                     Property(name='content', data_type=DataType.TEXT),
-                    Property(name='filename', data_type=DataType.TEXT),
                     Property(name='page_number', data_type=DataType.INT),
-                    Property(name='element_type', data_type=DataType.TEXT),
-                    Property(name='entities_json', data_type=DataType.TEXT)
+                    Property(name='chunk_index', data_type=DataType.INT)
+                ],
+                references=[
+                    ReferenceProperty(name='hasDocument', target_collection='DocumentObject')
                 ]
             )
-            logger.info(f'Коллекция {collection_name} создана')
+            logger.info(f'Коллекция DocumentChunk создана')
 
     def upsert_chunks(self, chunks_data: list, vectors: list):
         collection = self.client.collections.get('DocumentChunk')
