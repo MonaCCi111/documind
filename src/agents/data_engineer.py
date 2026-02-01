@@ -1,6 +1,5 @@
 from sentence_transformers import SentenceTransformer
 from src.core.document_loader import DocumentLoader
-from src.core.services.ner_service import ner_service
 from src.core.services.summarizer import summarizer
 from src.core.vector_store import VectorStoreManager
 from loguru import logger
@@ -78,7 +77,7 @@ class DataEngineerAgent:
 
             chunks_for_db.append({
                 'content': chunk.text,
-                'filename': doc.filename,
+                'page_number': chunk.page_number,
                 'chunk_index': idx,
                 'element_type': chunk.element_type,
             })
