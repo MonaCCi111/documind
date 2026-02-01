@@ -72,10 +72,9 @@ class VectorStoreManager:
 
             if response.objects:
                 obj = response.objects[0]
-                logger.info(f'Найден дупликат документа: {obj.properties.get("filename")}')
                 return {
                     'uuid': str(obj.uuid),
-                    'filename': obj.properties.filename,
+                    'filename': obj.properties.get('filename'),
                     'added_at': obj.properties.get('added_at'),
                     'summary': obj.properties.get('summary'),
                 }
