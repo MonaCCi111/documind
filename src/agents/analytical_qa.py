@@ -1,42 +1,62 @@
 import os
 from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer
-from langchain_gigachat import GigaChat
+from langchain_ollama import ChatOllama
 from langchain.schema import HumanMessage, SystemMessage
 from loguru import logger
 
 from src.core.vector_store import VectorStoreManager
 from src.config import settings
 
+
 class AnalyticalQAAgent:
-    def __init__(self):
-        self.llm = GigaChat(
-            credentials=settings.GIGACHAT_CREDENTIALS,
-            verify_ssl_certs=False,
-            scope=settings.GIGACHAT_SCOPE,
-            model='GigaChat'
+    def __init__(self, model_name='gemma3:4b'):
+        self.llm = ChatOllama(
+            model=model_name,
+            temperature=.1,
+            base_url='http://localhost:11434'
         )
 
-        logger.info('Загрузка модели эмбеддингов...')
         self.embedder = SentenceTransformer('intfloat/multilingual-e5-large')
 
         self.vector_store = VectorStoreManager()
 
-    def _format_context(self, chunks: List[Dict[str, Any]]) -> str:
+    def _format_smart_context(self, chunks: List[Dict[str, Any]]) -> str:
         formatted_text = ""
+
+        seen_docs = set()
+        unique_summaries = []
+
+        for chunk in chunks:
+            filename = chunk.get('filename', 'unknown')
+            summary = chunk.get('context_summary')
+
+            if filename not in seen_docs and summary:
+                unique_summaries.append(f'ДОКУМЕНТ: {filename}\n'
+                                        f'КРАТКОЕ СОДЕРЖАНИЕ: {summary}')
+
+        if unique_summaries:
+            formatted_text += '=== ОБЩАЯ ИНФОРМАЦИЯ О ДОКУМЕНТАХ ==='
+            formatted_text += '\n\n'.join(unique_summaries)
+            formatted_text += '\n\n'
+
+        formatted_text += '=== ДЕТАЛИ ИЗ ТЕКСТА ===\n'
         for i, chunk in enumerate(chunks):
-            formatted_text += f"\n--- ФРАГМЕНТ {i+1} (Файл: {chunk['filename']}, Стр: {chunk['page_number']} ---\n"
+            formatted_text += (f'\n--- ФРАГМЕНТ {i + 1} (Файл: {chunk["filename"]},'
+                               f'Стр: {chunk["page_number"]}) ---\n')
             formatted_text += chunk['content']
+
         return formatted_text
 
     def answer(self, query: str) -> Dict[str, Any]:
-        logger.info(f'Анализ вопроса: {query}')
+        logger.info(f'Вопрос пользователя: {query}')
 
         query_embedding = self.embedder.encode(f'query: {query}')
 
         relevant_chunks = self.vector_store.search(
             vector=query_embedding.tolist(),
-            limit=5
+            limit=5,
+            include_summary=True
         )
 
         if not relevant_chunks:
@@ -45,18 +65,23 @@ class AnalyticalQAAgent:
                 'sources': []
             }
 
-        context_str = self._format_context(relevant_chunks)
+        context_str = self._format_smart_context(relevant_chunks)
 
-        system_prompt = ('Ты профессиональный бизнес-ассистент DocuMind. Твоя задача отвечать на вопросы пользователя '
-                         'только на основе предоставленных фрагментов документов. Если информации в контексте нет, '
-                         'честно скажи об этом. Не выдумывай файты. При ответе ссылайся на номера фрагментов, страниц '
-                         'или названия документов, если это уместно.')
+        system_prompt = ('Ты - умный корпоративный ассистент Documind. '
+                         'Твоя задача - отвечать на вопросы, используя предо'
+                         'ставленный контекст. Контекст состоит из общей инфор'
+                         'мации (summary) и деталей (фрагментов). Используй '
+                         'саммари для понимания сути, а фрагменты - для точных '
+                         'фактов. Если ответа нет в тексте, скажи об этом. Не вы'
+                         'думывай. Отвечай на русском языке. Выводи только ответ '
+                         'без комментариев')
 
-        user_prompt = (f'Вопрос пользователя: {query}\n\n'
-                       f'Используй следующую информацию для ответа:\n{context_str}\n\n'
-                       f'Ответ:')
+        user_prompt = (f'ВОПРОС: {query}\n\n'
+                       f'КОНТЕКСТ:\n{context_str}\n\n'
+                       f'ОТВЕТ:')
 
         try:
+            logger.info('Генерация ответа через LLM')
             messages = [
                 SystemMessage(content=system_prompt),
                 HumanMessage(content=user_prompt)
@@ -65,13 +90,16 @@ class AnalyticalQAAgent:
 
             return {
                 'answer': response.content,
-                'sources': [{'file': c['filename'], 'page': c['page_number']} for c in relevant_chunks]
+                'sources': [
+                    {'file': c['filename'], 'page': c['page_number']}
+                    for c in relevant_chunks
+                ]
             }
 
         except Exception as e:
-            logger.error(f'Ошибка при обращении к GigaChat API: {e}')
+            logger.error(f'Ошибка LLM: {e}')
             return {
                 'answer': 'Произошла ошибка при генерации ответа',
-                'error': str(e)
+                'error': str(e),
+                'sources': []
             }
-
