@@ -5,14 +5,15 @@ langchain
 langchain-gigachat
 langchain-community
 langchain-weaviate
+langchain-ollama
 
 # Обработка документов
-unstructured[pdf,docx]  # Главная библиотека для парсинга
-pymupdf               # Альтернатива для PDF
-pdf2image             # Для конвертации PDF в изображения
-pillow                 # Работа с изображениями
-easyocr                  # OCR для сканов
-python-magic-bin
+unstructured[pdf,docx]
+pymupdf
+pdf2image
+pillow
+easyocr
+python-magic-bin # потом pip uninstall python-magic
 langdetect
 
 # Работа с данными
@@ -38,3 +39,4 @@ spacy
 # а также python -m spacy download ru_core_news_lg
 
 huggingface_hub[hf_xet]
+sentence-transformers

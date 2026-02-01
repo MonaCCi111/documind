@@ -4,6 +4,8 @@ import weaviate
 from weaviate.classes.config import Configure, Property, DataType, ReferenceProperty
 from weaviate.classes.query import MetadataQuery
 from loguru import logger
+import os
+from datetime import datetime, timezone
 
 
 class VectorStoreManager:

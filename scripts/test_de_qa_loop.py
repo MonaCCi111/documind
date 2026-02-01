@@ -1,4 +1,8 @@
-from src.config import PROJECT_ROOT
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.config import settings
 from src.agents.data_engineer import DataEngineerAgent
 from src.agents.analytical_qa import AnalyticalQAAgent
 from loguru import logger
@@ -8,7 +12,7 @@ def test_system():
     logger.info('=== Индексация ===')
     engineer = DataEngineerAgent()
 
-    test_file = PROJECT_ROOT / 'data/raw/draft_tests/rasskaz.txt'
+    test_file = settings.BASE_DIR / 'data/raw/draft_tests/rasskaz.txt'
 
     if test_file.exists():
         result = engineer.process_file(test_file)
@@ -19,7 +23,7 @@ def test_system():
     logger.info('\n=== QA сессия ===')
     qa_agent = AnalyticalQAAgent()
 
-    question = 'В какой одежде были Буркин и Иван Иванович?'
+    question = 'Кто такой Буркин?'
 
     logger.info(f'Вопрос: {question}')
     result = qa_agent.answer(question)
